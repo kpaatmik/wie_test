@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from .models import Appointment
-from account.serializers import UserSerializer, CaregiverSerializer
+from .models import Appointment, Session
+from account.serializers import UserSerializer, CaregiverSerializer, PregnantWomanSerializer
 from account.models import PregnantWoman, Caregiver
+from django.utils import timezone
 
 class AppointmentSerializer(serializers.ModelSerializer):
     patient_details = UserSerializer(source='patient', read_only=True)
@@ -42,4 +43,45 @@ class AppointmentSerializer(serializers.ModelSerializer):
             validated_data['duration'] = 60
             
         validated_data['patient'] = self.context['request'].user
+        return super().create(validated_data)
+
+class SessionSerializer(serializers.ModelSerializer):
+    pregnant_woman_details = PregnantWomanSerializer(source='pregnant_woman', read_only=True)
+    caregiver_details = CaregiverSerializer(source='caregiver', read_only=True)
+
+    class Meta:
+        model = Session
+        fields = [
+            'id', 'date', 'session_type', 'description', 'meet_link',
+            'is_completed', 'created_at', 'updated_at',
+            'pregnant_woman_details', 'caregiver_details',
+            'pregnant_woman', 'caregiver'
+        ]
+        read_only_fields = ['is_completed', 'created_at', 'updated_at', 'pregnant_woman', 'caregiver']
+        extra_kwargs = {
+            'pregnant_woman': {'required': False},
+            'caregiver': {'required': False},
+            'description': {'required': True},
+            'meet_link': {'required': True},
+            'session_type': {'required': True}
+        }
+
+    def validate_date(self, value):
+        if value < timezone.now():
+            raise serializers.ValidationError("Session date cannot be in the past")
+        return value
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if not request or not request.user:
+            raise serializers.ValidationError("User must be authenticated")
+
+        # Set the user based on their role
+        if hasattr(request.user, 'pregnant_woman'):
+            validated_data['pregnant_woman'] = request.user.pregnant_woman
+        elif hasattr(request.user, 'caregiver'):
+            validated_data['caregiver'] = request.user.caregiver
+        else:
+            raise serializers.ValidationError("User must be either a pregnant woman or caregiver")
+
         return super().create(validated_data)

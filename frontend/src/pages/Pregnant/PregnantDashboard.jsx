@@ -34,6 +34,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../api/axios';
+import EmergencyCall from '../../components/EmergencyCall/EmergencyCall';
 
 function PregnantDashboard() {
   const { user } = useAuth();
@@ -194,6 +195,11 @@ function PregnantDashboard() {
       )}
 
       <Grid container spacing={3}>
+        {/* Emergency Call Section */}
+        <Grid item xs={12}>
+          <EmergencyCall />
+        </Grid>
+
         {/* Welcome Message */}
         <Grid item xs={12}>
           <Paper sx={{ p: 3, mb: 3 }}>

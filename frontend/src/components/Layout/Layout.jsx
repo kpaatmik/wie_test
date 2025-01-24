@@ -33,7 +33,7 @@ const menuItems = [
   { text: 'Home', icon: <Home />, path: '/' },
   { text: 'Find Caregivers', icon: <Person />, path: '/caregivers' },
   { text: 'Expert Sessions', icon: <Event />, path: '/sessions' },
-  { text: 'Appointments', icon: <Group />, path: '/appointments' },
+  // { text: 'Appointments', icon: <Group />, path: '/appointments' },
   { text: 'Community', icon: <Forum />, path: '/social' },
 ];
 

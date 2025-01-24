@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework.views import APIView
-from .models import Appointment
-from .serializers import AppointmentSerializer
+from .models import Appointment, Session
+from .serializers import AppointmentSerializer, SessionSerializer
 from account.models import PregnantWoman, Caregiver
 from django.shortcuts import get_object_or_404
 
@@ -123,6 +123,35 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         appointment.save()
         serializer = self.get_serializer(appointment)
         return Response(serializer.data)
+
+class SessionViewSet(viewsets.ModelViewSet):
+    serializer_class = SessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'pregnant_woman'):
+            return Session.objects.filter(pregnant_woman=user.pregnant_woman)
+        elif hasattr(user, 'caregiver'):
+            return Session.objects.filter(caregiver=user.caregiver)
+        return Session.objects.none()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        if hasattr(user, 'pregnant_woman'):
+            # For pregnant women creating sessions
+            serializer.save(
+                pregnant_woman=user.pregnant_woman,
+                session_type='routine'  # Default type
+            )
+        elif hasattr(user, 'caregiver'):
+            # For caregivers creating sessions
+            serializer.save(
+                caregiver=user.caregiver,
+                session_type='routine'  # Default type
+            )
+        else:
+            raise PermissionError("User must be either a pregnant woman or caregiver")
 
 class UpcomingAppointmentsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
