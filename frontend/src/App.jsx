@@ -19,6 +19,7 @@ import Home from './pages/Home/Home';
 import PregnantDashboard from './pages/Pregnant/PregnantDashboard';
 import CaregiverSearch from './pages/Caregiver/CaregiverSearch';
 import CaregiverProfile from './pages/Caregiver/CaregiverProfile';
+import CaregiverDashboard from './pages/Caregiver/CaregiverDashboard';
 import ExpertSessions from './pages/Sessions/ExpertSessions';
 import SessionDetails from './pages/Sessions/SessionDetails';
 import Appointments from './pages/Appointments/Appointments';
@@ -47,6 +48,7 @@ function App() {
             >
               <Route index element={<Home />} />
               <Route path="pregnant/dashboard" element={<PregnantDashboard />} />
+              <Route path="caregiver/dashboard" element={<CaregiverDashboard />} />
               <Route path="caregivers" element={<CaregiverSearch />} />
               <Route path="caregivers/:id" element={<CaregiverProfile />} />
               <Route path="sessions" element={<ExpertSessions />} />

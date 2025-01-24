@@ -14,4 +14,5 @@ router.register(r'caregiver-experiences', CaregiverExperienceViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('login/', login_view, name='login'),
+    path('register/', UserViewSet.as_view({'post': 'create'}), name='register'),
 ]
