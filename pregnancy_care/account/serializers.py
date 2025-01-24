@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import User, PregnantWoman, Caregiver, CaregiverReview, CaregiverExperience
+from django.db.models import Avg
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,7 +32,9 @@ class CaregiverReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ('reviewer_name',)
 
     def get_reviewer_name(self, obj):
-        return obj.reviewer.user.get_full_name()
+        if obj.reviewer and obj.reviewer.user:
+            return f"{obj.reviewer.user.first_name} {obj.reviewer.user.last_name}".strip() or "Anonymous"
+        return "Anonymous"
 
 class CaregiverSerializer(serializers.ModelSerializer):
     user = UserSerializer()
@@ -39,12 +42,22 @@ class CaregiverSerializer(serializers.ModelSerializer):
     reviews = CaregiverReviewSerializer(many=True, read_only=True)
     languages = serializers.ListField(child=serializers.CharField(), default=['English'])
     availability = serializers.JSONField(default=dict)
-
+    average_rating = serializers.SerializerMethodField()
+    total_reviews = serializers.SerializerMethodField()
+    
     class Meta:
         model = Caregiver
         fields = ('id', 'user', 'bio', 'experience_years', 'hourly_rate', 'is_available',
-                 'rating', 'total_reviews', 'certifications', 'specializations',
-                 'experiences', 'reviews', 'languages', 'availability', 'created_at', 'updated_at')
+                 'rating', 'certifications', 'specializations',
+                 'experiences', 'reviews', 'languages', 'availability', 'created_at', 'updated_at', 'average_rating', 'total_reviews')
+        read_only_fields = ('id', 'user', 'rating', 'average_rating', 'total_reviews')
+
+    def get_average_rating(self, obj):
+        avg = CaregiverReview.objects.filter(caregiver=obj).aggregate(avg=Avg('rating'))['avg']
+        return round(float(avg), 1) if avg is not None else 0.0
+
+    def get_total_reviews(self, obj):
+        return CaregiverReview.objects.filter(caregiver=obj).count()
 
 class PregnantWomanSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

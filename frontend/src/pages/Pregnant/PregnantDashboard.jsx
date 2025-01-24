@@ -293,7 +293,7 @@ function PregnantDashboard() {
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                           <Person sx={{ mr: 1, color: 'text.secondary' }} />
                           <Typography variant="body2">
-                            Dr. {appointment.caregiver_name}
+                            {appointment.caregiver_name || 'Unknown Caregiver'}
                           </Typography>
                         </Box>
 
@@ -325,12 +325,6 @@ function PregnantDashboard() {
                         )}
                       </CardContent>
                       <CardActions>
-                        <Button 
-                          size="small" 
-                          onClick={() => navigate(`/appointments/${appointment.id}`)}
-                        >
-                          View Details
-                        </Button>
                         {appointment.status === 'pending' && (
                           <Button 
                             size="small" 

@@ -69,11 +69,19 @@ class CaregiverReview(models.Model):
         unique_together = ('caregiver', 'reviewer')
     
     def save(self, *args, **kwargs):
-        # Update caregiver's average rating
         super().save(*args, **kwargs)
-        reviews = self.caregiver.reviews.all()
-        self.caregiver.rating = sum(review.rating for review in reviews) / len(reviews)
-        self.caregiver.total_reviews = len(reviews)
+        # Recalculate aggregate rating using database aggregation
+        from django.db.models import Avg
+        reviews = CaregiverReview.objects.filter(caregiver=self.caregiver)
+        total_reviews = reviews.count()
+        
+        if total_reviews > 0:
+            avg_rating = reviews.aggregate(avg=Avg('rating'))['avg']
+            self.caregiver.rating = round(float(avg_rating), 1)
+        else:
+            self.caregiver.rating = 0.0
+            
+        self.caregiver.total_reviews = total_reviews
         self.caregiver.save()
     
     def __str__(self):

@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 from django.db import transaction
 from django.db.models import Avg
 from django.utils import timezone
+from django.db import models
 
 from .models import User, PregnantWoman, Caregiver, CaregiverReview, CaregiverExperience
 from booking.models import Appointment
@@ -200,35 +201,56 @@ class CaregiverViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
+        """Get aggregated stats for the logged-in caregiver"""
         try:
             caregiver = Caregiver.objects.get(user=request.user)
             
-            # Get appointments
-            appointments = Appointment.objects.filter(caregiver=caregiver)
-            current_month = timezone.now().month
-            monthly_appointments = appointments.filter(date__month=current_month).count()
-            total_appointments = appointments.count()
-            
-            # Calculate earnings (assuming $50 per appointment)
-            completed_appointments = appointments.filter(status='completed')
-            monthly_earnings = completed_appointments.filter(date__month=current_month).count() * 50
-            total_earnings = completed_appointments.count() * 50
-            
-            # Get reviews
+            # Calculate aggregate rating
             reviews = CaregiverReview.objects.filter(caregiver=caregiver)
             total_reviews = reviews.count()
-            rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+            
+            if total_reviews > 0:
+                total_rating = sum(review.rating for review in reviews)
+                rating = round(total_rating / total_reviews, 1)
+            else:
+                rating = 0.0
+            
+            # Get appointment stats
+            current_month = timezone.now().month
+            current_year = timezone.now().year
+            appointments = Appointment.objects.filter(caregiver=caregiver)
+            
+            total_appointments = appointments.count()
+            monthly_appointments = appointments.filter(
+                date__month=current_month,
+                date__year=current_year
+            ).count()
             
             return Response({
-                'monthly_earnings': monthly_earnings,
-                'total_earnings': total_earnings,
-                'total_reviews': total_reviews,
                 'rating': rating,
+                'total_reviews': total_reviews,
+                'total_appointments': total_appointments,
                 'monthly_appointments': monthly_appointments,
-                'total_appointments': total_appointments
             })
         except Caregiver.DoesNotExist:
-            return Response({'error': 'Caregiver profile not found'}, status=404)
+            return Response(
+                {"error": "Caregiver profile not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['get'])
+    def reviews(self, request):
+        """Get all reviews for the logged-in caregiver"""
+        try:
+            caregiver = Caregiver.objects.get(user=request.user)
+            reviews = CaregiverReview.objects.filter(caregiver=caregiver).order_by('-created_at')
+            serializer = CaregiverReviewSerializer(reviews, many=True)
+            return Response(serializer.data)
+        except Caregiver.DoesNotExist:
+            return Response(
+                {"error": "Caregiver profile not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 class PregnantWomanViewSet(viewsets.ModelViewSet):
     queryset = PregnantWoman.objects.all()

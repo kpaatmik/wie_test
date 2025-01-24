@@ -24,6 +24,7 @@ import {
   Cancel,
   Done,
   Circle,
+  EventNote,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -38,15 +39,15 @@ function CaregiverDashboard() {
   const [dashboardData, setDashboardData] = useState({
     profile: null,
     stats: {
-      total_earnings: 0,
-      monthly_earnings: 0,
-      total_reviews: 0,
       rating: 0,
+      total_reviews: 0,
       total_appointments: 0,
       monthly_appointments: 0,
+      total_earnings: 0,
+      monthly_earnings: 0
     },
     appointments: [],
-    reviews: [],
+    reviews: []
   });
 
   const getStatusColor = (status) => {
@@ -123,79 +124,39 @@ function CaregiverDashboard() {
     }
   };
 
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [profileRes, statsRes, appointmentsRes, reviewsRes] = await Promise.all([
+        api.get('/account/caregivers/me/'),
+        api.get('/account/caregivers/stats/'),
+        api.get('/booking/appointments/upcoming/'),
+        api.get('/account/caregivers/reviews/')
+      ]);
+
+      setDashboardData({
+        profile: profileRes.data,
+        stats: {
+          rating: statsRes.data.rating || 0,
+          total_reviews: statsRes.data.total_reviews || 0,
+          total_appointments: statsRes.data.total_appointments || 0,
+          monthly_appointments: statsRes.data.monthly_appointments || 0,
+          total_earnings: statsRes.data.total_earnings || 0,
+          monthly_earnings: statsRes.data.monthly_earnings || 0
+        },
+        appointments: appointmentsRes.data || [],
+        reviews: reviewsRes.data || []
+      });
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user) {
-        setError('Please log in to access the dashboard');
-        setLoading(false);
-        return;
-      }
-
-      if (user.user_type !== 'caregiver') {
-        setError('Only caregivers can access this dashboard');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setError('');
-        const responses = await Promise.allSettled([
-          api.get('/account/caregivers/me/'),
-          api.get('/account/caregivers/stats/'),
-          api.get('/booking/appointments/upcoming/'),
-          api.get('/account/caregivers/reviews/')
-        ]);
-
-        const [profileResponse, statsResponse, appointmentsResponse, reviewsResponse] = responses;
-
-        // Initialize data with defaults
-        const newDashboardData = {
-          profile: null,
-          stats: {
-            total_earnings: 0,
-            monthly_earnings: 0,
-            total_reviews: 0,
-            rating: 0,
-            total_appointments: 0,
-            monthly_appointments: 0,
-          },
-          appointments: [],
-          reviews: [],
-        };
-
-        // Handle each response individually
-        if (profileResponse.status === 'fulfilled') {
-          newDashboardData.profile = profileResponse.value.data;
-        } else {
-          console.error('Error fetching profile:', profileResponse.reason);
-          if (profileResponse.reason?.response?.status === 404) {
-            setError('Caregiver profile not found. Please complete your profile setup.');
-            setLoading(false);
-            return;
-          }
-        }
-
-        if (statsResponse.status === 'fulfilled') {
-          newDashboardData.stats = statsResponse.value.data;
-        }
-
-        if (appointmentsResponse.status === 'fulfilled') {
-          newDashboardData.appointments = appointmentsResponse.value.data;
-        }
-
-        if (reviewsResponse.status === 'fulfilled') {
-          newDashboardData.reviews = reviewsResponse.value.data;
-        }
-
-        setDashboardData(newDashboardData);
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError(err.response?.data?.error || 'Failed to load dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
   }, [user]);
 
@@ -285,36 +246,49 @@ function CaregiverDashboard() {
               </Paper>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 140 }}>
-                <Typography color="text.secondary" gutterBottom variant="h6" component="div">
-                  Rating
-                </Typography>
-                <Typography component="div" variant="h4" sx={{ flexGrow: 1 }}>
-                  {dashboardData.stats.rating?.toFixed(1) || 'N/A'}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Star color="warning" />
-                  <Typography variant="body2" color="text.secondary">
-                    {dashboardData.stats.total_reviews} Reviews
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Star sx={{ color: 'warning.main', mr: 1 }} />
+                    <Typography variant="h6">
+                      {(dashboardData.stats?.rating || 0).toFixed(1)}/5
+                    </Typography>
+                  </Box>
+                  <Typography color="text.secondary" variant="body2">
+                    Rating ({dashboardData.stats?.total_reviews || 0} reviews)
                   </Typography>
-                </Box>
-              </Paper>
+                </CardContent>
+              </Card>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: 140 }}>
-                <Typography color="text.secondary" gutterBottom variant="h6" component="div">
-                  Appointments
-                </Typography>
-                <Typography component="div" variant="h4" sx={{ flexGrow: 1 }}>
-                  {dashboardData.stats.monthly_appointments}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <CalendarMonth color="info" />
-                  <Typography variant="body2" color="text.secondary">
-                    This Month ({dashboardData.stats.total_appointments} Total)
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <CalendarMonth sx={{ color: 'primary.main', mr: 1 }} />
+                    <Typography variant="h6">
+                      {dashboardData.stats?.monthly_appointments || 0}
+                    </Typography>
+                  </Box>
+                  <Typography color="text.secondary" variant="body2">
+                    Appointments This Month
                   </Typography>
-                </Box>
-              </Paper>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <EventNote sx={{ color: 'primary.main', mr: 1 }} />
+                    <Typography variant="h6">
+                      {dashboardData.stats?.total_appointments || 0}
+                    </Typography>
+                  </Box>
+                  <Typography color="text.secondary" variant="body2">
+                    Total Appointments
+                  </Typography>
+                </CardContent>
+              </Card>
             </Grid>
           </Grid>
         </Grid>
@@ -395,12 +369,6 @@ function CaregiverDashboard() {
                         )}
                       </CardContent>
                       <CardActions>
-                        <Button 
-                          size="small" 
-                          onClick={() => navigate(`/appointments/${appointment.id}`)}
-                        >
-                          View Details
-                        </Button>
                         {appointment.status === 'pending' && (
                           <>
                             <Button 
@@ -445,20 +413,20 @@ function CaregiverDashboard() {
                 </Grid>
               ) : (
                 dashboardData.reviews.map((review, index) => (
-                  <Grid item xs={12} md={4} key={index}>
+                  <Grid item xs={12} md={4} key={review.id}>
                     <Card>
                       <CardContent>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                           <Star sx={{ color: 'warning.main', mr: 1 }} />
                           <Typography variant="h6">
-                            {review.rating}/5
+                            {Number(review.rating || 0).toFixed(1)}/5
                           </Typography>
                         </Box>
-                        <Typography variant="body2" color="text.secondary">
-                          {review.comment}
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          {review.comment || 'No comment provided'}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                          {new Date(review.created_at).toLocaleDateString()}
+                        <Typography variant="caption" color="text.secondary">
+                          By {review.reviewer_name || 'Anonymous'} on {new Date(review.created_at).toLocaleDateString()}
                         </Typography>
                       </CardContent>
                     </Card>
