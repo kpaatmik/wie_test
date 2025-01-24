@@ -19,7 +19,7 @@ class CaregiverExperienceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = CaregiverExperience
-        fields = '__all__'
+        fields = ('id', 'title', 'organization', 'start_date', 'end_date', 'description', 'is_current')
 
 class CaregiverReviewSerializer(serializers.ModelSerializer):
     reviewer_name = serializers.SerializerMethodField()
@@ -34,15 +34,17 @@ class CaregiverReviewSerializer(serializers.ModelSerializer):
         return obj.reviewer.user.get_full_name()
 
 class CaregiverSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
+    user = UserSerializer()
     experiences = CaregiverExperienceSerializer(many=True, read_only=True)
     reviews = CaregiverReviewSerializer(many=True, read_only=True)
+    languages = serializers.ListField(child=serializers.CharField(), default=['English'])
+    availability = serializers.JSONField(default=dict)
 
     class Meta:
         model = Caregiver
         fields = ('id', 'user', 'bio', 'experience_years', 'hourly_rate', 'is_available',
                  'rating', 'total_reviews', 'certifications', 'specializations',
-                 'experiences', 'reviews', 'created_at', 'updated_at')
+                 'experiences', 'reviews', 'languages', 'availability', 'created_at', 'updated_at')
 
 class PregnantWomanSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

@@ -33,86 +33,7 @@ import {
   EventAvailable,
 } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
-
-// Dummy data for a caregiver
-const dummyCaregiver = {
-  id: 1,
-  user: {
-    first_name: "Sarah",
-    last_name: "Johnson",
-    email: "sarah.johnson@example.com",
-    phone_number: "+1 (555) 123-4567",
-    city: "San Francisco",
-    state: "California",
-    profile_picture: "https://randomuser.me/api/portraits/women/44.jpg"
-  },
-  bio: "Experienced caregiver with over 10 years of experience in prenatal and postnatal care. Specialized in high-risk pregnancies and newborn care.",
-  experience_years: 10,
-  hourly_rate: 45.00,
-  rating: 4.8,
-  total_reviews: 127,
-  specializations: [
-    "Prenatal Care",
-    "Postnatal Care",
-    "Lactation Support",
-    "Newborn Care",
-    "High-Risk Pregnancy"
-  ],
-  certifications: [
-    {
-      name: "Certified Nurse-Midwife (CNM)",
-      issuing_organization: "American Midwifery Certification Board",
-      expiry_date: "2025-12-31"
-    },
-    {
-      name: "Certified Lactation Consultant",
-      issuing_organization: "International Board of Lactation Consultant Examiners",
-      expiry_date: "2024-06-30"
-    }
-  ],
-  experiences: [
-    {
-      id: 1,
-      title: "Senior Prenatal Care Specialist",
-      organization: "City Hospital",
-      start_date: "2020-01-01",
-      end_date: "2023-12-31",
-      description: "Provided comprehensive prenatal care and support to expecting mothers."
-    },
-    {
-      id: 2,
-      title: "Maternity Care Coordinator",
-      organization: "Family Care Center",
-      start_date: "2018-06-01",
-      end_date: "2019-12-31",
-      description: "Coordinated maternity care services and provided support to new mothers."
-    }
-  ],
-  reviews: [
-    {
-      id: 1,
-      rating: 5,
-      reviewer_name: "Emily Wilson",
-      created_at: "2023-12-15",
-      comment: "Sarah was amazing! She provided excellent care during my pregnancy and was always available when I needed her."
-    },
-    {
-      id: 2,
-      rating: 5,
-      reviewer_name: "Jessica Brown",
-      created_at: "2023-11-30",
-      comment: "Very knowledgeable and professional. Made me feel comfortable throughout my pregnancy journey."
-    }
-  ],
-  languages: ["English", "Spanish"],
-  availability: {
-    monday: "9:00 AM - 5:00 PM",
-    tuesday: "9:00 AM - 5:00 PM",
-    wednesday: "9:00 AM - 5:00 PM",
-    thursday: "9:00 AM - 5:00 PM",
-    friday: "9:00 AM - 3:00 PM"
-  }
-};
+import api from '../../api/axios';
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -132,6 +53,7 @@ function CaregiverProfile() {
   const { id } = useParams();
   const [caregiver, setCaregiver] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
 
   const formatDate = (dateString) => {
@@ -147,14 +69,22 @@ function CaregiverProfile() {
   };
 
   useEffect(() => {
-    // Simulate API call with setTimeout
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setCaregiver(dummyCaregiver);
-      setLoading(false);
-    }, 1000);
+    const fetchCaregiverProfile = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await api.get(`/account/caregivers/${id}/`);
+        console.log('Caregiver data:', response.data);
+        setCaregiver(response.data);
+      } catch (error) {
+        console.error('Error fetching caregiver profile:', error);
+        setError('Failed to load caregiver profile. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
+    fetchCaregiverProfile();
   }, [id]);
 
   const handleTabChange = (event, newValue) => {
@@ -165,6 +95,16 @@ function CaregiverProfile() {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <Typography variant="h6" color="error">
+          {error}
+        </Typography>
       </Box>
     );
   }

@@ -90,6 +90,17 @@ class CaregiverViewSet(viewsets.ModelViewSet):
     search_fields = ['user__city', 'user__state', 'specializations']
     ordering_fields = ['rating', 'hourly_rate', 'experience_years']
 
+    def retrieve(self, request, pk=None):
+        try:
+            caregiver = self.get_object()
+            serializer = self.get_serializer(caregiver)
+            return Response(serializer.data)
+        except Caregiver.DoesNotExist:
+            return Response(
+                {'error': 'Caregiver not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
     @action(detail=True, methods=['post'])
     def review(self, request, pk=None):
         caregiver = self.get_object()
@@ -106,7 +117,14 @@ class CaregiverViewSet(viewsets.ModelViewSet):
         caregiver = self.get_object()
         return Response({
             'is_available': caregiver.is_available,
-            'hourly_rate': caregiver.hourly_rate
+            'hourly_rate': caregiver.hourly_rate,
+            'schedule': {
+                'monday': '9:00 AM - 5:00 PM',
+                'tuesday': '9:00 AM - 5:00 PM',
+                'wednesday': '9:00 AM - 5:00 PM',
+                'thursday': '9:00 AM - 5:00 PM',
+                'friday': '9:00 AM - 3:00 PM'
+            }
         })
 
     @action(detail=False, methods=['get'])
