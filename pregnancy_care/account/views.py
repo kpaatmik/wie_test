@@ -90,6 +90,25 @@ class CaregiverViewSet(viewsets.ModelViewSet):
     search_fields = ['user__city', 'user__state', 'specializations']
     ordering_fields = ['rating', 'hourly_rate', 'experience_years']
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user_id = self.request.query_params.get('user', None)
+        if user_id is not None:
+            queryset = queryset.filter(user_id=user_id)
+        return queryset
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        try:
+            caregiver = self.queryset.get(user=request.user)
+            serializer = self.get_serializer(caregiver)
+            return Response(serializer.data)
+        except Caregiver.DoesNotExist:
+            return Response(
+                {'error': 'Caregiver profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
     def retrieve(self, request, pk=None):
         try:
             caregiver = self.get_object()

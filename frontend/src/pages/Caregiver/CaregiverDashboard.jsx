@@ -21,16 +21,21 @@ const CaregiverDashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch caregiver profile
-        const profileResponse = await axios.get(`/account/caregivers/${user.caregiver_profile}/`);
+        if (!user?.id || user.user_type !== 'caregiver') {
+          throw new Error('Invalid user type');
+        }
+
+        // Get the caregiver profile using the /me endpoint
+        const caregiverResponse = await axios.get('/account/caregivers/me/');
+        const caregiverProfile = caregiverResponse.data;
         
         // Fetch upcoming appointments (assuming endpoint exists)
         const appointmentsResponse = await axios.get('/booking/appointments/upcoming/');
         
         setDashboardData({
-          profile: profileResponse.data,
+          profile: caregiverProfile,
           upcomingAppointments: appointmentsResponse.data || [],
-          reviews: profileResponse.data.reviews || [],
+          reviews: caregiverProfile.reviews || [],
           earnings: {
             thisMonth: calculateMonthlyEarnings(appointmentsResponse.data),
             total: calculateTotalEarnings(appointmentsResponse.data)
@@ -62,6 +67,16 @@ const CaregiverDashboard = () => {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!dashboardData.profile) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6" color="error">
+          Error: Could not load caregiver profile. Please make sure you are logged in as a caregiver.
+        </Typography>
       </Box>
     );
   }
