@@ -73,7 +73,7 @@ function Layout() {
       <List>
         {menuItems.map((item) => (
           <ListItem
-            button
+            component="div"
             key={item.text}
             onClick={() => {
               navigate(item.path);
@@ -81,6 +81,7 @@ function Layout() {
             }}
             selected={location.pathname === item.path}
             sx={{
+              cursor: 'pointer',
               '&.Mui-selected': {
                 backgroundColor: theme.palette.primary.light,
                 '&:hover': {

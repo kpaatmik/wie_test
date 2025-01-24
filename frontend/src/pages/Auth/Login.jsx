@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -24,6 +24,7 @@ const validationSchema = Yup.object({
 function Login() {
   const theme = useTheme();
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,6 +41,7 @@ function Login() {
         const result = await login(values);
         if (result.success) {
           toast.success('Login successful!');
+          navigate('/', { replace: true });
         } else {
           setError(result.error);
         }

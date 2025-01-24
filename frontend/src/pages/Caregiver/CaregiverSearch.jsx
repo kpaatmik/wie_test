@@ -15,7 +15,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Search as SearchIcon, LocationOn } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../../api/axios';
 
 function CaregiverSearch() {
@@ -49,6 +49,10 @@ function CaregiverSearch() {
   const handleSearch = (e) => {
     e.preventDefault();
     fetchCaregivers();
+  };
+
+  const handleViewProfile = (id) => {
+    navigate(`/caregivers/${id}`);
   };
 
   return (
@@ -129,6 +133,7 @@ function CaregiverSearch() {
                     height="200"
                     image={caregiver.profile_picture || '/images/default-profile.jpg'}
                     alt={`${caregiver.user.first_name} ${caregiver.user.last_name}`}
+                    sx={{ objectFit: 'cover' }}
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography gutterBottom variant="h6" component="h2">
@@ -160,7 +165,9 @@ function CaregiverSearch() {
                     <Button
                       variant="contained"
                       fullWidth
-                      onClick={() => navigate(`/caregivers/${caregiver.id}`)}
+                      component={Link}
+                      to={`/caregivers/${caregiver.id}`}
+                      sx={{ mt: 'auto' }}
                     >
                       View Profile
                     </Button>

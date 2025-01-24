@@ -14,12 +14,16 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 class CaregiverExperienceSerializer(serializers.ModelSerializer):
+    start_date = serializers.DateField(format='%Y-%m-%d')
+    end_date = serializers.DateField(format='%Y-%m-%d', allow_null=True)
+    
     class Meta:
         model = CaregiverExperience
         fields = '__all__'
 
 class CaregiverReviewSerializer(serializers.ModelSerializer):
     reviewer_name = serializers.SerializerMethodField()
+    created_at = serializers.DateTimeField(format='%Y-%m-%d')
 
     class Meta:
         model = CaregiverReview
