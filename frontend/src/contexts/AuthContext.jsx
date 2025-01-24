@@ -11,6 +11,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const navigateBasedOnUserType = (user) => {
+    if (user.user_type === 'pregnant') {
+      navigate('/pregnant/dashboard');
+    } else if (user.user_type === 'caregiver') {
+      navigate('/caregiver/dashboard');
+    } else {
+      navigate('/');
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -24,6 +34,10 @@ export function AuthProvider({ children }) {
     try {
       const response = await api.get('/account/users/me/');
       setUser(response.data);
+      // Navigate based on user type if we're on the home page
+      if (window.location.pathname === '/') {
+        navigateBasedOnUserType(response.data);
+      }
     } catch (error) {
       console.error('Error fetching user:', error);
       localStorage.removeItem('token');
@@ -35,11 +49,16 @@ export function AuthProvider({ children }) {
   const login = async (credentials) => {
     try {
       const response = await api.post('/account/login/', credentials);
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setUser(user);
-      navigate('/');
-      return { success: true };
+      const { token, user, message } = response.data;
+      
+      if (token && user) {
+        localStorage.setItem('token', token);
+        setUser(user);
+        navigateBasedOnUserType(user);
+        return { success: true, message };
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
       console.error('Login error:', error);
       return {

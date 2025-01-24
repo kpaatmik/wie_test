@@ -12,6 +12,9 @@ from .serializers import (
     CaregiverReviewSerializer, CaregiverExperienceSerializer,
     UserRegistrationSerializer
 )
+from django.contrib.auth import authenticate
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
 # Create your views here.
 
@@ -106,6 +109,34 @@ class CaregiverViewSet(viewsets.ModelViewSet):
             'hourly_rate': caregiver.hourly_rate
         })
 
+    @action(detail=False, methods=['get'])
+    def recommended(self, request):
+        # Get the user's location
+        user_city = request.user.city
+        user_state = request.user.state
+        
+        # First, get caregivers in the same city
+        local_caregivers = self.queryset.filter(
+            user__city=user_city,
+            is_available=True
+        ).order_by('-rating')[:3]
+        
+        # If we don't have enough local caregivers, add some from the same state
+        if local_caregivers.count() < 3:
+            state_caregivers = self.queryset.filter(
+                user__state=user_state,
+                is_available=True
+            ).exclude(
+                id__in=local_caregivers.values_list('id', flat=True)
+            ).order_by('-rating')[:3-local_caregivers.count()]
+            
+            caregivers = list(local_caregivers) + list(state_caregivers)
+        else:
+            caregivers = list(local_caregivers)
+        
+        serializer = self.get_serializer(caregivers, many=True)
+        return Response(serializer.data)
+
 class PregnantWomanViewSet(viewsets.ModelViewSet):
     queryset = PregnantWoman.objects.all()
     serializer_class = PregnantWomanSerializer
@@ -115,6 +146,17 @@ class PregnantWomanViewSet(viewsets.ModelViewSet):
         if self.request.user.user_type == 'pregnant':
             return PregnantWoman.objects.filter(user=self.request.user)
         return PregnantWoman.objects.none()
+    
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        if request.user.user_type != 'pregnant':
+            return Response({
+                'message': 'Only pregnant users can access this endpoint'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        pregnant_woman = get_object_or_404(PregnantWoman, user=request.user)
+        serializer = self.get_serializer(pregnant_woman)
+        return Response(serializer.data)
 
 class CaregiverExperienceViewSet(viewsets.ModelViewSet):
     queryset = CaregiverExperience.objects.all()
@@ -128,3 +170,28 @@ class CaregiverExperienceViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(caregiver=self.request.user.caregiver_profile)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not username or not password:
+        return Response({
+            'message': 'Please provide both username and password'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    user = authenticate(username=username, password=password)
+    
+    if user:
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'user': UserSerializer(user).data,
+            'message': 'Login successful'
+        })
+    else:
+        return Response({
+            'message': 'Invalid credentials'
+        }, status=status.HTTP_401_UNAUTHORIZED)

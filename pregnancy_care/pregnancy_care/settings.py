@@ -40,13 +40,14 @@ INSTALLED_APPS = [
     
     # Third party apps
     'rest_framework',
-    'corsheaders',
     'rest_framework.authtoken',
+    'corsheaders',
     
     # Local apps
     'account',
     'expert_sessions',
     'social',
+    'booking',
 ]
 
 MIDDLEWARE = [

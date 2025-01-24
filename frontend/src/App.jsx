@@ -16,6 +16,7 @@ import Register from './pages/Auth/Register';
 
 // Main Pages
 import Home from './pages/Home/Home';
+import PregnantDashboard from './pages/Pregnant/PregnantDashboard';
 import CaregiverSearch from './pages/Caregiver/CaregiverSearch';
 import CaregiverProfile from './pages/Caregiver/CaregiverProfile';
 import ExpertSessions from './pages/Sessions/ExpertSessions';
@@ -45,6 +46,7 @@ function App() {
               }
             >
               <Route index element={<Home />} />
+              <Route path="pregnant/dashboard" element={<PregnantDashboard />} />
               <Route path="caregivers" element={<CaregiverSearch />} />
               <Route path="caregivers/:id" element={<CaregiverProfile />} />
               <Route path="sessions" element={<ExpertSessions />} />

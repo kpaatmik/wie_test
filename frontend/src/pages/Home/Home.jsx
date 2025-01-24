@@ -1,3 +1,6 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   Box,
   Container,
@@ -9,13 +12,25 @@ import {
   Button,
   useTheme,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 
 function Home() {
   const theme = useTheme();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      if (user.user_type === 'pregnant') {
+        navigate('/pregnant/dashboard', { replace: true });
+      } else if (user.user_type === 'caregiver') {
+        navigate('/caregiver/dashboard', { replace: true });
+      }
+    }
+  }, [user, navigate]);
+
+  if (user?.user_type === 'pregnant' || user?.user_type === 'caregiver') {
+    return null; // Don't render anything while redirecting
+  }
 
   const features = [
     {
@@ -98,31 +113,6 @@ function Home() {
             </Grid>
           ))}
         </Grid>
-
-        {user?.user_type === 'pregnant' && (
-          <Box sx={{ mt: 6, textAlign: 'center' }}>
-            <Typography variant="h4" color="primary" sx={{ mb: 3 }}>
-              Need Support?
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={() => navigate('/caregivers')}
-              sx={{ mr: 2 }}
-            >
-              Find a Caregiver
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              size="large"
-              onClick={() => navigate('/sessions')}
-            >
-              Book Expert Session
-            </Button>
-          </Box>
-        )}
       </Box>
     </Container>
   );
