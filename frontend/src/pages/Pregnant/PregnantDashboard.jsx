@@ -15,6 +15,7 @@ import {
   ListItemIcon,
   Divider,
   CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   CalendarMonth,
@@ -23,6 +24,12 @@ import {
   BookOnline,
   Group,
   Article,
+  CheckCircle,
+  Schedule,
+  Cancel,
+  Done,
+  Circle,
+  Person,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,37 +39,138 @@ function PregnantDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [dashboardData, setDashboardData] = useState({
     pregnancyWeek: 0,
     upcomingAppointments: [],
     recentPosts: [],
     recommendedCaregivers: [],
   });
+  const [cancellingAppointment, setCancellingAppointment] = useState(false);
+
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return 'success';
+      case 'pending':
+        return 'warning';
+      case 'cancelled':
+        return 'error';
+      case 'completed':
+        return 'info';
+      default:
+        return 'default';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return <CheckCircle color="success" />;
+      case 'pending':
+        return <Schedule color="warning" />;
+      case 'cancelled':
+        return <Cancel color="error" />;
+      case 'completed':
+        return <Done color="info" />;
+      default:
+        return <Circle />;
+    }
+  };
+
+  const handleCancelAppointment = async (appointmentId) => {
+    try {
+      setCancellingAppointment(true);
+      await api.post(`/booking/appointments/${appointmentId}/cancel/`);
+      
+      // Update the appointment status in the local state
+      setDashboardData(prev => ({
+        ...prev,
+        upcomingAppointments: prev.upcomingAppointments.map(apt => 
+          apt.id === appointmentId 
+            ? { ...apt, status: 'cancelled' }
+            : apt
+        )
+      }));
+
+      // Show success message
+      setSuccess('Appointment cancelled successfully');
+    } catch (err) {
+      console.error('Error cancelling appointment:', err);
+      setError(err.response?.data?.detail || 'Failed to cancel appointment');
+    } finally {
+      setCancellingAppointment(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      try {
-        // Fetch pregnancy details
-        const pregnancyResponse = await api.get('/account/pregnant-women/me/');
-        const appointmentsResponse = await api.get('/appointments/upcoming/');
-        const postsResponse = await api.get('/social/posts/recent/');
-        const caregiversResponse = await api.get('/account/caregivers/recommended/');
+      if (!user || user.user_type !== 'pregnant') {
+        setError('Only pregnant users can access this dashboard');
+        setLoading(false);
+        return;
+      }
 
-        setDashboardData({
-          pregnancyWeek: pregnancyResponse.data.pregnancy_week,
-          upcomingAppointments: appointmentsResponse.data.slice(0, 3),
-          recentPosts: postsResponse.data.slice(0, 3),
-          recommendedCaregivers: caregiversResponse.data.slice(0, 3),
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+      try {
+        setError('');
+        const responses = await Promise.allSettled([
+          api.get('/account/pregnant-women/me/'),
+          api.get('/booking/appointments/upcoming/'),
+          api.get('/social/posts/recent/'),
+          api.get('/account/caregivers/recommended/')
+        ]);
+
+        const [pregnancyResponse, appointmentsResponse, postsResponse, caregiversResponse] = responses;
+
+        // Initialize data with defaults
+        const newDashboardData = {
+          pregnancyWeek: 0,
+          upcomingAppointments: [],
+          recentPosts: [],
+          recommendedCaregivers: [],
+        };
+
+        // Handle each response individually
+        if (pregnancyResponse.status === 'fulfilled') {
+          newDashboardData.pregnancyWeek = pregnancyResponse.value.data.pregnancy_week;
+        } else {
+          console.error('Error fetching pregnancy data:', pregnancyResponse.reason);
+        }
+
+        if (appointmentsResponse.status === 'fulfilled') {
+          newDashboardData.upcomingAppointments = appointmentsResponse.value.data;
+        }
+
+        if (postsResponse.status === 'fulfilled') {
+          newDashboardData.recentPosts = postsResponse.value.data.slice(0, 3);
+        }
+
+        if (caregiversResponse.status === 'fulfilled') {
+          newDashboardData.recommendedCaregivers = caregiversResponse.value.data.slice(0, 3);
+        }
+
+        setDashboardData(newDashboardData);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.response?.data?.detail || 'Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [user]);
+
+  if (!user || user.user_type !== 'pregnant') {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Alert severity="error">
+          Only pregnant users can access this dashboard. Please log in with a pregnant user account.
+        </Alert>
+      </Container>
+    );
+  }
 
   if (loading) {
     return (
@@ -74,6 +182,17 @@ function PregnantDashboard() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {success}
+        </Alert>
+      )}
+
       <Grid container spacing={3}>
         {/* Welcome Message */}
         <Grid item xs={12}>
@@ -82,146 +201,188 @@ function PregnantDashboard() {
               Welcome back, {user?.first_name}!
             </Typography>
             <Typography variant="subtitle1" color="text.secondary">
-              You are in week {dashboardData.pregnancyWeek} of your pregnancy
+              {dashboardData.pregnancyWeek > 0 
+                ? `You are in week ${dashboardData.pregnancyWeek} of your pregnancy`
+                : 'Loading pregnancy information...'}
             </Typography>
           </Paper>
         </Grid>
 
         {/* Quick Actions */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, height: '100%' }}>
+          <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
               Quick Actions
             </Typography>
             <List>
-              <ListItem button onClick={() => navigate('/appointments')}>
+              <ListItem button onClick={() => navigate('/caregivers')}>
                 <ListItemIcon>
                   <CalendarMonth />
                 </ListItemIcon>
-                <ListItemText primary="Book Appointment" />
-              </ListItem>
-              <ListItem button onClick={() => navigate('/caregivers')}>
-                <ListItemIcon>
-                  <MedicalServices />
-                </ListItemIcon>
                 <ListItemText primary="Find Caregiver" />
               </ListItem>
-              <ListItem button onClick={() => navigate('/sessions')}>
+              <ListItem button onClick={() => navigate('/appointments')}>
                 <ListItemIcon>
-                  <BookOnline />
+                  <AccessTime />
                 </ListItemIcon>
-                <ListItemText primary="Expert Sessions" />
+                <ListItemText primary="View Appointments" />
               </ListItem>
-              <ListItem button onClick={() => navigate('/social')}>
+              <ListItem button onClick={() => navigate('/community')}>
                 <ListItemIcon>
                   <Group />
                 </ListItemIcon>
-                <ListItemText primary="Community" />
+                <ListItemText primary="Join Community" />
               </ListItem>
             </List>
           </Paper>
         </Grid>
 
-        {/* Upcoming Appointments */}
-        <Grid item xs={12} md={8}>
+        {/* Appointments Section */}
+        <Grid item xs={12}>
           <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Upcoming Appointments
-            </Typography>
-            {dashboardData.upcomingAppointments.length > 0 ? (
-              dashboardData.upcomingAppointments.map((appointment, index) => (
-                <Card key={index} sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="subtitle1">
-                      {appointment.title}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                      <CalendarMonth sx={{ mr: 1 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {new Date(appointment.date).toLocaleDateString()}
-                      </Typography>
-                      <AccessTime sx={{ ml: 2, mr: 1 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {appointment.time}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                  <CardActions>
-                    <Button size="small" onClick={() => navigate(`/appointments/${appointment.id}`)}>
-                      View Details
-                    </Button>
-                  </CardActions>
-                </Card>
-              ))
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                No upcoming appointments
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6">
+                Your Appointments
               </Typography>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => navigate('/caregivers')}
+                startIcon={<BookOnline />}
+              >
+                Book New Appointment
+              </Button>
+            </Box>
+
+            {dashboardData.upcomingAppointments.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 3 }}>
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  No appointments found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Book an appointment with a caregiver to get started
+                </Typography>
+              </Box>
+            ) : (
+              <Grid container spacing={2}>
+                {dashboardData.upcomingAppointments.map((appointment, index) => (
+                  <Grid item xs={12} md={6} lg={4} key={appointment.id}>
+                    <Card 
+                      sx={{ 
+                        height: '100%',
+                        borderLeft: 3,
+                        borderColor: `${getStatusColor(appointment.status)}.main`
+                      }}
+                    >
+                      <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          {getStatusIcon(appointment.status)}
+                          <Typography 
+                            variant="subtitle2" 
+                            color={`${getStatusColor(appointment.status)}.main`}
+                            sx={{ ml: 1 }}
+                          >
+                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                          </Typography>
+                        </Box>
+
+                        <Typography variant="h6" gutterBottom>
+                          {appointment.title || 'Appointment'}
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <Person sx={{ mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body2">
+                            Dr. {appointment.caregiver_name}
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                          <CalendarMonth sx={{ mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body2">
+                            {new Date(appointment.date).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <AccessTime sx={{ mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body2">
+                            {appointment.time}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                            ({appointment.duration} mins)
+                          </Typography>
+                        </Box>
+
+                        {appointment.description && (
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            sx={{ mt: 1 }}
+                          >
+                            {appointment.description}
+                          </Typography>
+                        )}
+                      </CardContent>
+                      <CardActions>
+                        <Button 
+                          size="small" 
+                          onClick={() => navigate(`/appointments/${appointment.id}`)}
+                        >
+                          View Details
+                        </Button>
+                        {appointment.status === 'pending' && (
+                          <Button 
+                            size="small" 
+                            color="error"
+                            onClick={() => handleCancelAppointment(appointment.id)}
+                            disabled={cancellingAppointment}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
             )}
           </Paper>
         </Grid>
 
         {/* Recent Community Posts */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
               Recent Community Posts
             </Typography>
-            {dashboardData.recentPosts.length > 0 ? (
-              dashboardData.recentPosts.map((post, index) => (
-                <Card key={index} sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="subtitle1">
-                      {post.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      {post.content}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button size="small" onClick={() => navigate(`/social/posts/${post.id}`)}>
-                      Read More
-                    </Button>
-                  </CardActions>
-                </Card>
-              ))
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                No recent posts
-              </Typography>
-            )}
-          </Paper>
-        </Grid>
-
-        {/* Recommended Caregivers */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Recommended Caregivers
-            </Typography>
-            {dashboardData.recommendedCaregivers.length > 0 ? (
-              dashboardData.recommendedCaregivers.map((caregiver, index) => (
-                <Card key={index} sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="subtitle1">
-                      {caregiver.user.first_name} {caregiver.user.last_name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {caregiver.specializations.join(', ')}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button size="small" onClick={() => navigate(`/caregivers/${caregiver.id}`)}>
-                      View Profile
-                    </Button>
-                  </CardActions>
-                </Card>
-              ))
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                No recommended caregivers
-              </Typography>
-            )}
+            <Grid container spacing={2}>
+              {dashboardData.recentPosts.length === 0 ? (
+                <Grid item xs={12}>
+                  <Typography color="text.secondary">
+                    No recent posts. Join the community to see posts from other mothers.
+                  </Typography>
+                </Grid>
+              ) : (
+                dashboardData.recentPosts.map((post, index) => (
+                  <Grid item xs={12} md={4} key={index}>
+                    <Card>
+                      <CardContent>
+                        <Typography variant="h6">{post.title}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {post.content.substring(0, 100)}...
+                        </Typography>
+                      </CardContent>
+                      <CardActions>
+                        <Button size="small" onClick={() => navigate(`/community/post/${post.id}`)}>
+                          Read More
+                        </Button>
+                      </CardActions>
+                    </Card>
+                  </Grid>
+                ))
+              )}
+            </Grid>
           </Paper>
         </Grid>
       </Grid>

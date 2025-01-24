@@ -1,12 +1,16 @@
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, status, filters
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import serializers
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from django.db import transaction
+from django.db.models import Avg
+from django.utils import timezone
+
 from .models import User, PregnantWoman, Caregiver, CaregiverReview, CaregiverExperience
+from booking.models import Appointment
 from .serializers import (
     UserSerializer, PregnantWomanSerializer, CaregiverSerializer,
     CaregiverReviewSerializer, CaregiverExperienceSerializer,
@@ -14,7 +18,6 @@ from .serializers import (
 )
 from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
 
 # Create your views here.
 
@@ -24,8 +27,8 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         if self.action == 'create':
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -85,7 +88,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class CaregiverViewSet(viewsets.ModelViewSet):
     queryset = Caregiver.objects.all()
     serializer_class = CaregiverSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['user__city', 'user__state', 'specializations']
     ordering_fields = ['rating', 'hourly_rate', 'experience_years']
@@ -100,36 +103,57 @@ class CaregiverViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def me(self, request):
         try:
-            caregiver = self.queryset.get(user=request.user)
+            caregiver = Caregiver.objects.get(user=request.user)
             serializer = self.get_serializer(caregiver)
             return Response(serializer.data)
         except Caregiver.DoesNotExist:
             return Response(
-                {'error': 'Caregiver profile not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-    def retrieve(self, request, pk=None):
-        try:
-            caregiver = self.get_object()
-            serializer = self.get_serializer(caregiver)
-            return Response(serializer.data)
-        except Caregiver.DoesNotExist:
-            return Response(
-                {'error': 'Caregiver not found'},
+                {"error": "Caregiver profile not found"}, 
                 status=status.HTTP_404_NOT_FOUND
             )
 
     @action(detail=True, methods=['post'])
     def review(self, request, pk=None):
         caregiver = self.get_object()
-        pregnant_woman = request.user.pregnant_profile
         
-        serializer = CaregiverReviewSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(caregiver=caregiver, reviewer=pregnant_woman)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Check if user is pregnant
+        if not hasattr(request.user, 'pregnant_profile'):
+            return Response(
+                {'error': 'Only pregnant users can submit reviews'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if rating is provided
+        if 'rating' not in request.data:
+            return Response(
+                {'error': 'Rating is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Create or update review
+        review_data = {
+            'caregiver': caregiver,
+            'reviewer': request.user.pregnant_profile,
+            'rating': request.data['rating'],
+            'comment': request.data.get('comment', '')
+        }
+        
+        review, created = CaregiverReview.objects.update_or_create(
+            caregiver=caregiver,
+            reviewer=request.user.pregnant_profile,
+            defaults={'rating': request.data['rating'], 'comment': request.data.get('comment', '')}
+        )
+        
+        # Update caregiver's average rating
+        avg_rating = CaregiverReview.objects.filter(caregiver=caregiver).aggregate(Avg('rating'))['rating__avg']
+        total_reviews = CaregiverReview.objects.filter(caregiver=caregiver).count()
+        
+        caregiver.rating = avg_rating or 0
+        caregiver.total_reviews = total_reviews
+        caregiver.save()
+        
+        serializer = CaregiverReviewSerializer(review)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
     def availability(self, request, pk=None):
@@ -174,31 +198,69 @@ class CaregiverViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(caregivers, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        try:
+            caregiver = Caregiver.objects.get(user=request.user)
+            
+            # Get appointments
+            appointments = Appointment.objects.filter(caregiver=caregiver)
+            current_month = timezone.now().month
+            monthly_appointments = appointments.filter(date__month=current_month).count()
+            total_appointments = appointments.count()
+            
+            # Calculate earnings (assuming $50 per appointment)
+            completed_appointments = appointments.filter(status='completed')
+            monthly_earnings = completed_appointments.filter(date__month=current_month).count() * 50
+            total_earnings = completed_appointments.count() * 50
+            
+            # Get reviews
+            reviews = CaregiverReview.objects.filter(caregiver=caregiver)
+            total_reviews = reviews.count()
+            rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+            
+            return Response({
+                'monthly_earnings': monthly_earnings,
+                'total_earnings': total_earnings,
+                'total_reviews': total_reviews,
+                'rating': rating,
+                'monthly_appointments': monthly_appointments,
+                'total_appointments': total_appointments
+            })
+        except Caregiver.DoesNotExist:
+            return Response({'error': 'Caregiver profile not found'}, status=404)
+
 class PregnantWomanViewSet(viewsets.ModelViewSet):
     queryset = PregnantWoman.objects.all()
     serializer_class = PregnantWomanSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.user_type == 'pregnant':
+        if self.action == 'me':
             return PregnantWoman.objects.filter(user=self.request.user)
-        return PregnantWoman.objects.none()
-    
+        return PregnantWoman.objects.none()  # Regular users shouldn't list all pregnant women
+
     @action(detail=False, methods=['get'])
     def me(self, request):
-        if request.user.user_type != 'pregnant':
-            return Response({
-                'message': 'Only pregnant users can access this endpoint'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        pregnant_woman = get_object_or_404(PregnantWoman, user=request.user)
-        serializer = self.get_serializer(pregnant_woman)
-        return Response(serializer.data)
+        try:
+            pregnant_woman = self.get_queryset().get()
+            serializer = self.get_serializer(pregnant_woman)
+            return Response(serializer.data)
+        except PregnantWoman.DoesNotExist:
+            return Response(
+                {"detail": "Pregnant woman profile not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except PregnantWoman.MultipleObjectsReturned:
+            # This shouldn't happen, but handle it just in case
+            pregnant_woman = self.get_queryset().first()
+            serializer = self.get_serializer(pregnant_woman)
+            return Response(serializer.data)
 
 class CaregiverExperienceViewSet(viewsets.ModelViewSet):
     queryset = CaregiverExperience.objects.all()
     serializer_class = CaregiverExperienceSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         if hasattr(self.request.user, 'caregiver_profile'):

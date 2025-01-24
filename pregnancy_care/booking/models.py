@@ -14,11 +14,11 @@ class Appointment(models.Model):
 
     patient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='appointments')
     caregiver = models.ForeignKey(Caregiver, on_delete=models.CASCADE, related_name='appointments')
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, blank=True, default='Appointment')
     description = models.TextField(blank=True)
     date = models.DateField()
     time = models.TimeField()
-    duration = models.IntegerField(help_text='Duration in minutes')
+    duration = models.IntegerField(help_text='Duration in minutes', default=60)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
