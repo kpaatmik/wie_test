@@ -214,9 +214,9 @@ const CaregiverProfile = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
       
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <Paper elevation={3} sx={{ p: 3, mb: 3, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Avatar
               src={caregiver.user.profile_picture}
               sx={{ width: 150, height: 150, mx: 'auto', mb: 2 }}
@@ -224,10 +224,12 @@ const CaregiverProfile = () => {
             <Typography variant="h5" gutterBottom>
               {caregiver.user.first_name} {caregiver.user.last_name}
             </Typography>
-            <Rating value={caregiver.rating} readOnly precision={0.5} />
-            <Typography variant="body2" color="text.secondary">
-              ({caregiver.total_reviews} reviews)
-            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
+              <Rating value={caregiver.rating} readOnly precision={0.5} />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                ({caregiver.total_reviews} reviews)
+              </Typography>
+            </Box>
             
             {/* Debug info - temporarily show user info */}
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -241,7 +243,8 @@ const CaregiverProfile = () => {
                   variant="contained"
                   color="primary"
                   onClick={handleBookingOpen}
-                  sx={{ mr: 2 }}
+                  sx={{ mb: 2 }}
+                  fullWidth
                   startIcon={<EventAvailable />}
                 >
                   Book Appointment
@@ -264,52 +267,78 @@ const CaregiverProfile = () => {
                 </Button>
               </Box>
             )}
-          </Grid>
-          
-          <Grid item xs={12} md={8}>
-            <List>
-              <ListItem>
-                <ListItemIcon>
-                  <AttachMoney />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Hourly Rate"
-                  secondary={`$${caregiver.hourly_rate}/hour`}
-                />
+          </Paper>
+        </Grid>
+        
+        <Grid item xs={12} md="auto">
+          <Paper elevation={3} sx={{ p: 3, mb: 3, height: '100%', display: 'flex', flexDirection: 'column', minWidth: { xs: '100%', md: '300px' } }}>
+            <List sx={{ width: '100%' }}>
+              <ListItem sx={{ py: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <Box sx={{ width: '40px', display: 'flex', justifyContent: 'center' }}>
+                    <AttachMoney />
+                  </Box>
+                  <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', ml: 2 }}>
+                    <Typography variant="body1" fontWeight="medium">
+                      Hourly Rate
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      ${caregiver.hourly_rate}/hour
+                    </Typography>
+                  </Box>
+                </Box>
               </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <Work />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Experience"
-                  secondary={`${caregiver.experience_years} years`}
-                />
+              <ListItem sx={{ py: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <Box sx={{ width: '40px', display: 'flex', justifyContent: 'center' }}>
+                    <Work />
+                  </Box>
+                  <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', ml: 2 }}>
+                    <Typography variant="body1" fontWeight="medium">
+                      Experience
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {caregiver.experience_years} years
+                    </Typography>
+                  </Box>
+                </Box>
               </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <LocationOn />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Location"
-                  secondary={`${caregiver.user.city}, ${caregiver.user.state}`}
-                />
+              <ListItem sx={{ py: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <Box sx={{ width: '40px', display: 'flex', justifyContent: 'center' }}>
+                    <LocationOn />
+                  </Box>
+                  <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', ml: 2 }}>
+                    <Typography variant="body1" fontWeight="medium">
+                      Location
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {caregiver.user.city}, {caregiver.user.state}
+                    </Typography>
+                  </Box>
+                </Box>
               </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <Language />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Languages"
-                  secondary={caregiver.languages.join(', ')}
-                />
+              <ListItem sx={{ py: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <Box sx={{ width: '40px', display: 'flex', justifyContent: 'center' }}>
+                    <Language />
+                  </Box>
+                  <Box sx={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', ml: 2 }}>
+                    <Typography variant="body1" fontWeight="medium">
+                      Languages
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {caregiver.languages.join(', ')}
+                    </Typography>
+                  </Box>
+                </Box>
               </ListItem>
             </List>
-          </Grid>
+          </Paper>
         </Grid>
-      </Paper>
+      </Grid>
 
-      <Paper elevation={3} sx={{ p: 3 }}>
+      <Paper elevation={3} sx={{ p: 3,mt:4 }}>
         <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
           <Tab label="About" />
           <Tab label="Experience" />

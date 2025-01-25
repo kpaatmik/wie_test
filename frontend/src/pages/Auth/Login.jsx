@@ -56,80 +56,82 @@ function Login() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90%',
+        maxWidth: '400px',
         backgroundColor: theme.palette.background.default,
       }}
     >
-      <Container maxWidth="sm">
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%'
+        }}
+      >
+        <Typography
+          component="h1"
+          variant="h4"
+          color="primary"
+          sx={{ mb: 4, fontWeight: 600 }}
         >
-          <Typography
-            component="h1"
-            variant="h4"
+          Welcome Back
+        </Typography>
+        {error && (
+          <Alert severity="error" sx={{ width: '100%', mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        <form onSubmit={formik.handleSubmit} style={{ width: '100%'  }}>
+          <TextField
+            fullWidth
+            id="username"
+            name="username"
+            label="Username"
+            value={formik.values.username}
+            onChange={formik.handleChange}
+            error={formik.touched.username && Boolean(formik.errors.username)}
+            helperText={formik.touched.username && formik.errors.username}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            id="password"
+            name="password"
+            label="Password"
+            type="password"
+            value={formik.values.password}
+            onChange={formik.handleChange}
+            error={formik.touched.password && Boolean(formik.errors.password)}
+            helperText={formik.touched.password && formik.errors.password}
+            sx={{ mb: 3 }}
+          />
+          <Button
+            fullWidth
+            type="submit"
+            variant="contained"
             color="primary"
-            sx={{ mb: 4, fontWeight: 600 }}
+            disabled={loading}
+            sx={{ mb: 2 }}
           >
-            Welcome Back
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-          <form onSubmit={formik.handleSubmit} style={{ width: '100%' }}>
-            <TextField
-              fullWidth
-              id="username"
-              name="username"
-              label="Username"
-              value={formik.values.username}
-              onChange={formik.handleChange}
-              error={formik.touched.username && Boolean(formik.errors.username)}
-              helperText={formik.touched.username && formik.errors.username}
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              id="password"
-              name="password"
-              label="Password"
-              type="password"
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              error={formik.touched.password && Boolean(formik.errors.password)}
-              helperText={formik.touched.password && formik.errors.password}
-              sx={{ mb: 3 }}
-            />
-            <Button
-              fullWidth
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={loading}
-              sx={{ mb: 2 }}
-            >
-              {loading ? 'Logging in...' : 'Login'}
-            </Button>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="body2" color="text.secondary">
-                Don't have an account?{' '}
-                <Link component={RouterLink} to="/register" color="primary">
-                  Register here
-                </Link>
-              </Typography>
-            </Box>
-          </form>
-        </Paper>
-      </Container>
+            {loading ? 'Logging in...' : 'Login'}
+          </Button>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Don't have an account?{' '}
+              <Link component={RouterLink} to="/register" color="primary">
+                Register here
+              </Link>
+            </Typography>
+          </Box>
+        </form>
+      </Paper>
     </Box>
   );
 }

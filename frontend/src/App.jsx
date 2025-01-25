@@ -25,6 +25,7 @@ import SessionDetails from './pages/Sessions/SessionDetails';
 import Appointments from './pages/Appointments/Appointments';
 import Social from './pages/Social/Social';
 import Profile from './pages/Profile/Profile';
+import ChatbotPanel from './components/ChatbotPanel';
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
             </Route>
           </Routes>
           <ToastContainer position="top-right" autoClose={3000} />
+          <ChatbotPanel />
         </AuthProvider>
       </Router>
     </ThemeProvider>

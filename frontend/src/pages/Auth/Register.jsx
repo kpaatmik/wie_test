@@ -124,272 +124,273 @@ function Register() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        py: 4,
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90%',
+        maxWidth: '800px',
         backgroundColor: theme.palette.background.default,
       }}
     >
-      <Container maxWidth="md">
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%'
+        }}
+      >
+        <Typography
+          component="h1"
+          variant="h4"
+          color="primary"
+          sx={{ mb: 4, fontWeight: 600 }}
         >
-          <Typography
-            component="h1"
-            variant="h4"
-            color="primary"
-            sx={{ mb: 4, fontWeight: 600 }}
-          >
-            Create Account
-          </Typography>
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 3 }}>
-              {error.split('\n').map((line, index) => (
-                <div key={index}>{line}</div>
-              ))}
-            </Alert>
-          )}
-          <form onSubmit={formik.handleSubmit} style={{ width: '100%' }}>
-            <Grid container spacing={2}>
-              {/* User Type Selection */}
-              <Grid item xs={12}>
-                <FormControl component="fieldset">
-                  <FormLabel component="legend">I am a:</FormLabel>
-                  <RadioGroup
-                    row
-                    name="user_type"
-                    value={formik.values.user_type}
-                    onChange={formik.handleChange}
-                  >
-                    <FormControlLabel
-                      value="pregnant"
-                      control={<Radio />}
-                      label="Pregnant Woman"
-                    />
-                    <FormControlLabel
-                      value="caregiver"
-                      control={<Radio />}
-                      label="Caregiver"
-                    />
-                  </RadioGroup>
-                </FormControl>
-              </Grid>
-
-              {/* Basic Information */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  id="username"
-                  name="username"
-                  label="Username"
-                  value={formik.values.username}
+          Create Account
+        </Typography>
+        {error && (
+          <Alert severity="error" sx={{ width: '100%', mb: 3 }}>
+            {error.split('\n').map((line, index) => (
+              <div key={index}>{line}</div>
+            ))}
+          </Alert>
+        )}
+        <form onSubmit={formik.handleSubmit} style={{ width: '100%' }}>
+          <Grid container spacing={2}>
+            {/* User Type Selection */}
+            <Grid item xs={12}>
+              <FormControl component="fieldset">
+                <FormLabel component="legend">I am a:</FormLabel>
+                <RadioGroup
+                  row
+                  name="user_type"
+                  value={formik.values.user_type}
                   onChange={formik.handleChange}
-                  error={formik.touched.username && Boolean(formik.errors.username)}
-                  helperText={formik.touched.username && formik.errors.username}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  id="email"
-                  name="email"
-                  label="Email"
-                  type="email"
-                  value={formik.values.email}
-                  onChange={formik.handleChange}
-                  error={formik.touched.email && Boolean(formik.errors.email)}
-                  helperText={formik.touched.email && formik.errors.email}
-                />
-              </Grid>
-
-              {/* Password Fields */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  id="password"
-                  name="password"
-                  label="Password"
-                  type="password"
-                  value={formik.values.password}
-                  onChange={formik.handleChange}
-                  error={formik.touched.password && Boolean(formik.errors.password)}
-                  helperText={formik.touched.password && formik.errors.password}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  id="password2"
-                  name="password2"
-                  label="Confirm Password"
-                  type="password"
-                  value={formik.values.password2}
-                  onChange={formik.handleChange}
-                  error={formik.touched.password2 && Boolean(formik.errors.password2)}
-                  helperText={formik.touched.password2 && formik.errors.password2}
-                />
-              </Grid>
-
-              {/* Personal Information */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  id="first_name"
-                  name="first_name"
-                  label="First Name"
-                  value={formik.values.first_name}
-                  onChange={formik.handleChange}
-                  error={formik.touched.first_name && Boolean(formik.errors.first_name)}
-                  helperText={formik.touched.first_name && formik.errors.first_name}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  id="last_name"
-                  name="last_name"
-                  label="Last Name"
-                  value={formik.values.last_name}
-                  onChange={formik.handleChange}
-                  error={formik.touched.last_name && Boolean(formik.errors.last_name)}
-                  helperText={formik.touched.last_name && formik.errors.last_name}
-                />
-              </Grid>
-
-              {/* Contact Information */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  id="phone_number"
-                  name="phone_number"
-                  label="Phone Number"
-                  value={formik.values.phone_number}
-                  onChange={formik.handleChange}
-                  error={formik.touched.phone_number && Boolean(formik.errors.phone_number)}
-                  helperText={formik.touched.phone_number && formik.errors.phone_number}
-                />
-              </Grid>
-
-              {/* Address Fields */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  id="address"
-                  name="address"
-                  label="Address"
-                  value={formik.values.address}
-                  onChange={formik.handleChange}
-                  error={formik.touched.address && Boolean(formik.errors.address)}
-                  helperText={formik.touched.address && formik.errors.address}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  id="city"
-                  name="city"
-                  label="City"
-                  value={formik.values.city}
-                  onChange={formik.handleChange}
-                  error={formik.touched.city && Boolean(formik.errors.city)}
-                  helperText={formik.touched.city && formik.errors.city}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  id="state"
-                  name="state"
-                  label="State"
-                  value={formik.values.state}
-                  onChange={formik.handleChange}
-                  error={formik.touched.state && Boolean(formik.errors.state)}
-                  helperText={formik.touched.state && formik.errors.state}
-                />
-              </Grid>
-
-              {/* Caregiver Specific Fields */}
-              {isCaregiver && (
-                <>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      id="bio"
-                      name="bio"
-                      label="Bio"
-                      multiline
-                      rows={4}
-                      value={formik.values.bio}
-                      onChange={formik.handleChange}
-                      error={formik.touched.bio && Boolean(formik.errors.bio)}
-                      helperText={formik.touched.bio && formik.errors.bio}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      id="hourly_rate"
-                      name="hourly_rate"
-                      label="Hourly Rate ($)"
-                      type="number"
-                      value={formik.values.hourly_rate}
-                      onChange={formik.handleChange}
-                      error={formik.touched.hourly_rate && Boolean(formik.errors.hourly_rate)}
-                      helperText={formik.touched.hourly_rate && formik.errors.hourly_rate}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      id="experience_years"
-                      name="experience_years"
-                      label="Years of Experience"
-                      type="number"
-                      value={formik.values.experience_years}
-                      onChange={formik.handleChange}
-                      error={formik.touched.experience_years && Boolean(formik.errors.experience_years)}
-                      helperText={formik.touched.experience_years && formik.errors.experience_years}
-                    />
-                  </Grid>
-                </>
-              )}
-
-              {/* Submit Button */}
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  disabled={loading}
-                  sx={{ mt: 2 }}
                 >
-                  {loading ? 'Creating Account...' : 'Create Account'}
-                </Button>
-              </Grid>
-
-              {/* Login Link */}
-              <Grid item xs={12}>
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Already have an account?{' '}
-                    <Link component={RouterLink} to="/login" color="primary">
-                      Login here
-                    </Link>
-                  </Typography>
-                </Box>
-              </Grid>
+                  <FormControlLabel
+                    value="pregnant"
+                    control={<Radio />}
+                    label="Pregnant Woman"
+                  />
+                  <FormControlLabel
+                    value="caregiver"
+                    control={<Radio />}
+                    label="Caregiver"
+                  />
+                </RadioGroup>
+              </FormControl>
             </Grid>
-          </form>
-        </Paper>
-      </Container>
+
+            {/* Basic Information */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                id="username"
+                name="username"
+                label="Username"
+                value={formik.values.username}
+                onChange={formik.handleChange}
+                error={formik.touched.username && Boolean(formik.errors.username)}
+                helperText={formik.touched.username && formik.errors.username}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                id="email"
+                name="email"
+                label="Email"
+                type="email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
+              />
+            </Grid>
+
+            {/* Password Fields */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                id="password"
+                name="password"
+                label="Password"
+                type="password"
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                error={formik.touched.password && Boolean(formik.errors.password)}
+                helperText={formik.touched.password && formik.errors.password}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                id="password2"
+                name="password2"
+                label="Confirm Password"
+                type="password"
+                value={formik.values.password2}
+                onChange={formik.handleChange}
+                error={formik.touched.password2 && Boolean(formik.errors.password2)}
+                helperText={formik.touched.password2 && formik.errors.password2}
+              />
+            </Grid>
+
+            {/* Personal Information */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                id="first_name"
+                name="first_name"
+                label="First Name"
+                value={formik.values.first_name}
+                onChange={formik.handleChange}
+                error={formik.touched.first_name && Boolean(formik.errors.first_name)}
+                helperText={formik.touched.first_name && formik.errors.first_name}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                id="last_name"
+                name="last_name"
+                label="Last Name"
+                value={formik.values.last_name}
+                onChange={formik.handleChange}
+                error={formik.touched.last_name && Boolean(formik.errors.last_name)}
+                helperText={formik.touched.last_name && formik.errors.last_name}
+              />
+            </Grid>
+
+            {/* Contact Information */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                id="phone_number"
+                name="phone_number"
+                label="Phone Number"
+                value={formik.values.phone_number}
+                onChange={formik.handleChange}
+                error={formik.touched.phone_number && Boolean(formik.errors.phone_number)}
+                helperText={formik.touched.phone_number && formik.errors.phone_number}
+              />
+            </Grid>
+
+            {/* Address Fields */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                id="address"
+                name="address"
+                label="Address"
+                value={formik.values.address}
+                onChange={formik.handleChange}
+                error={formik.touched.address && Boolean(formik.errors.address)}
+                helperText={formik.touched.address && formik.errors.address}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                id="city"
+                name="city"
+                label="City"
+                value={formik.values.city}
+                onChange={formik.handleChange}
+                error={formik.touched.city && Boolean(formik.errors.city)}
+                helperText={formik.touched.city && formik.errors.city}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                id="state"
+                name="state"
+                label="State"
+                value={formik.values.state}
+                onChange={formik.handleChange}
+                error={formik.touched.state && Boolean(formik.errors.state)}
+                helperText={formik.touched.state && formik.errors.state}
+              />
+            </Grid>
+
+            {/* Caregiver Specific Fields */}
+            {isCaregiver && (
+              <>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    id="bio"
+                    name="bio"
+                    label="Bio"
+                    multiline
+                    rows={4}
+                    value={formik.values.bio}
+                    onChange={formik.handleChange}
+                    error={formik.touched.bio && Boolean(formik.errors.bio)}
+                    helperText={formik.touched.bio && formik.errors.bio}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    id="hourly_rate"
+                    name="hourly_rate"
+                    label="Hourly Rate ($)"
+                    type="number"
+                    value={formik.values.hourly_rate}
+                    onChange={formik.handleChange}
+                    error={formik.touched.hourly_rate && Boolean(formik.errors.hourly_rate)}
+                    helperText={formik.touched.hourly_rate && formik.errors.hourly_rate}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    id="experience_years"
+                    name="experience_years"
+                    label="Years of Experience"
+                    type="number"
+                    value={formik.values.experience_years}
+                    onChange={formik.handleChange}
+                    error={formik.touched.experience_years && Boolean(formik.errors.experience_years)}
+                    helperText={formik.touched.experience_years && formik.errors.experience_years}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {/* Submit Button */}
+            <Grid item xs={12}>
+              <Button
+                fullWidth
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                sx={{ mt: 2 }}
+              >
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Button>
+            </Grid>
+
+            {/* Login Link */}
+            <Grid item xs={12}>
+              <Box sx={{ textAlign: 'center', mt: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Already have an account?{' '}
+                  <Link component={RouterLink} to="/login" color="primary">
+                    Login here
+                  </Link>
+                </Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </form>
+      </Paper>
     </Box>
   );
 }
