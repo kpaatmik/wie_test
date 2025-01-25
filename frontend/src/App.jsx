@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { ToastContainer } from 'react-toastify';
@@ -13,6 +13,7 @@ import Layout from './components/Layout/Layout';
 // Auth Pages
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import IDVerification from './pages/Auth/IDVerification';
 
 // Main Pages
 import Home from './pages/Home/Home';
@@ -34,19 +35,22 @@ function App() {
       <Router>
         <AuthProvider>
           <Routes>
-            {/* Auth Routes */}
+            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
             {/* Protected Routes */}
-            <Route
-              path="/"
-              element={
-                <PrivateRoute>
-                  <Layout />
-                </PrivateRoute>
-              }
-            >
+            <Route path="/verify-id" element={
+              <PrivateRoute>
+                <IDVerification />
+              </PrivateRoute>
+            } />
+            
+            <Route path="/" element={
+              <PrivateRoute>
+                <Layout />
+              </PrivateRoute>
+            }>
               <Route index element={<Home />} />
               <Route path="pregnant/dashboard" element={<PregnantDashboard />} />
               <Route path="caregiver/dashboard" element={<CaregiverDashboard />} />
@@ -58,6 +62,9 @@ function App() {
               <Route path="social" element={<Social />} />
               <Route path="profile" element={<Profile />} />
             </Route>
+
+            {/* Catch all route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <ToastContainer position="top-right" autoClose={3000} />
           <ChatbotPanel />

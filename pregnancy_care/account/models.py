@@ -98,3 +98,39 @@ class CaregiverExperience(models.Model):
     
     def __str__(self):
         return f"{self.title} at {self.organization} - {self.caregiver.user.get_full_name()}"
+
+class IDVerification(models.Model):
+    ID_TYPE_CHOICES = (
+        ('passport', 'Passport'),
+        ('drivers_license', "Driver's License"),
+        ('national_id', 'National ID'),
+        ('aadhar', 'Aadhar Card'),
+    )
+
+    VERIFICATION_STATUS = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='id_verification')
+    id_type = models.CharField(max_length=20, choices=ID_TYPE_CHOICES)
+    id_number = models.CharField(max_length=50)
+    id_front_image = models.ImageField(upload_to='id_verifications/')
+    id_back_image = models.ImageField(upload_to='id_verifications/')
+    verification_status = models.CharField(
+        max_length=10, 
+        choices=VERIFICATION_STATUS, 
+        default='pending'
+    )
+    submission_date = models.DateTimeField(auto_now_add=True)
+    verification_date = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(null=True, blank=True)
+    is_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.id_type} Verification ({self.verification_status})"
+
+    class Meta:
+        verbose_name = "ID Verification"
+        verbose_name_plural = "ID Verifications"

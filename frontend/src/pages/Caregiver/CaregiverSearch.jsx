@@ -18,6 +18,8 @@ import { Search as SearchIcon, LocationOn } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../api/axios';
 
+const baseURL = 'http://localhost:8000';
+
 function CaregiverSearch() {
   const [caregivers, setCaregivers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,12 @@ function CaregiverSearch() {
   const handleSearch = (e) => {
     e.preventDefault();
     fetchCaregivers();
+  };
+
+  const getProfilePictureUrl = (profilePicture) => {
+    if (!profilePicture) return '/default-profile.jpg';
+    if (profilePicture.startsWith('http')) return profilePicture;
+    return `${baseURL}${profilePicture}`;
   };
 
   const handleViewProfile = (id) => {
@@ -131,9 +139,16 @@ function CaregiverSearch() {
                   <CardMedia
                     component="img"
                     height="200"
-                    image={caregiver.profile_picture || '/images/default-profile.jpg'}
+                    image={getProfilePictureUrl(caregiver.user.profile_picture_url)}
                     alt={`${caregiver.user.first_name} ${caregiver.user.last_name}`}
-                    sx={{ objectFit: 'cover' }}
+                    sx={{ 
+                      objectFit: 'cover',
+                      bgcolor: 'grey.200'
+                    }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/default-profile.jpg';
+                    }}
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography gutterBottom variant="h6" component="h2">
