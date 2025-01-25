@@ -12,32 +12,41 @@ const ChatbotPanel = () => {
         onClick={() => setIsOpen(true)}
         sx={{
           position: 'fixed',
-          bottom: 20,
-          right: 20,
+          bottom: 60,
+          right: 80,
           backgroundColor: 'primary.main',
           color: 'white',
+          width: 60,
+          height: 60,
+          boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
           '&:hover': {
             backgroundColor: 'primary.dark',
+            transform: 'scale(1.1)',
+            boxShadow: '0 6px 12px rgba(0,0,0,0.3)',
           },
+          transition: 'all 0.3s ease',
           display: isOpen ? 'none' : 'flex',
+          zIndex: 1300,
         }}
       >
-        <ChatIcon />
+        <ChatIcon sx={{ fontSize: 30 }} />
       </IconButton>
 
       {/* Chat panel */}
       <Paper
-        elevation={3}
+        elevation={6}
         sx={{
           position: 'fixed',
-          right: isOpen ? 20 : -400,
-          bottom: 20,
+          right: isOpen ? 80 : -400,
+          bottom: 60,
           width: 350,
           height: 600,
           transition: 'right 0.3s ease-in-out',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          zIndex: 1300,
+          boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
         }}
       >
         <Box
